@@ -1,0 +1,4214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP Management Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background-color: #f8fafc; }
+
+  .status-UP { color: #16a34a; font-weight: 600; }
+  .status-DOWN { color: #dc2626; font-weight: 600; }
+  th { cursor: pointer; }
+
+  /* Sticky table header */
+  thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f1f5f9; /* same as bg-gray-100 */
+    z-index: 2;
+    box-shadow: 0 2px 2px rgba(0,0,0,0.05);
+  }
+
+  /* Toast (copy notification) */
+  #toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #16a34a;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Scrollable table container */
+  .table-container {
+    max-height: 70vh;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+  }
+</style>
+</head>
+<body class="p-6">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-4 text-center">💻=🌐 Factory - IP Management Dashboard</h1>
+
+    <!-- Controls -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+      <input id="searchInput" type="text" placeholder="Search by name, IP or MAC..." class="border rounded-lg px-3 py-2 w-full sm:w-1/2">
+      
+      <div class="flex gap-2">
+        <select id="filterState" class="border rounded-lg px-3 py-2">
+          <option value="">All States</option>
+          <option value="UP">UP</option>
+          <option value="DOWN">DOWN</option>
+        </select>
+        <button id="reloadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">🔄 Reload</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container bg-white shadow-lg">
+      <table id="deviceTable" class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th data-sort="name" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Device Name ⬍</th>
+            <th data-sort="ip" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">IP ⬍</th>
+            <th data-sort="mac" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">MAC ⬍</th>
+            <th data-sort="type" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Type ⬍</th>
+            <th data-sort="make" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Make ⬍</th>
+            <th data-sort="state" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">Status ⬍</th>
+            <th data-sort="first_seen" class="px-4 py-2 text-left text-sm font-semibold text-gray-700">First Seen ⬍</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Toast message -->
+  <div id="toast">Copied!</div>
+
+  <!-- Embedded JSON data -->
+  <script id="ipdata" type="application/json">
+  {
+    "networkId": "eth-C0A89400-16E48D8C1188AE",
+    "devices": [
+      {
+      "mac": "28:80:88:DD:B9:08",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "name": "GS310TP",
+      "type": "SWITCH",
+      "make": "Netgear",
+      "model": "GS310TP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:44:FD:9A:81:EF",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "name": "ILOSGH3290VNV\u0000",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:A7:EF:FE:07:49",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "type": "MOBILE",
+      "make": "OnePlus",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "7C:4D:8F:25:81:50",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "name": "NPI258150",
+      "type": "PRINTER",
+      "make": "HP",
+      "model": "M255dw",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "8C:3B:AD:08:D2:61",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "type": "SWITCH",
+      "make": "Netgear",
+      "model": "10-Port Gigabit Ethernet PoE Switch",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "8C:3B:AD:08:D3:12",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "type": "SWITCH",
+      "make": "Netgear",
+      "model": "10-Port Gigabit Ethernet PoE Switch",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "8C:3B:AD:08:D4:86",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "type": "SWITCH",
+      "make": "Netgear",
+      "model": "10-Port Gigabit Ethernet PoE Switch",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B0:5A:DA:C5:D1:9C",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "name": "NPIC5D19C",
+      "type": "PRINTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "E8:D8:D1:AE:A7:0E",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "make": "HP",
+      "model": "LaserJet Pro M404-M405",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:52:93:19:C3:1C",
+      "ip": [
+        "0.0.0.0"
+      ],
+      "state": "UP",
+      "name": "iPhone",
+      "type": "MOBILE",
+      "make": "Apple",
+      "model": "iPhone",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "28:92:4A:36:D6:93",
+      "ip": [
+        "192.168.148.1"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E4:C3:2A:2D:4A:B6",
+      "ip": [
+        "192.168.148.2"
+      ],
+      "state": "UP",
+      "name": "M2SVRANSVR",
+      "type": "NETWORK_APPLIANCE",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:6E:FF:91",
+      "ip": [
+        "192.168.148.3"
+      ],
+      "state": "UP",
+      "name": "M2SVRMAIL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:A4:54:81:92:55",
+      "ip": [
+        "192.168.148.4"
+      ],
+      "state": "UP",
+      "name": "M2SVRTALLY",
+      "type": "DESKTOP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:15:85:0A",
+      "ip": [
+        "192.168.148.5"
+      ],
+      "state": "UP",
+      "name": "M2SVRRFID",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7C:61:45:0E:BE",
+      "ip": [
+        "192.168.148.6"
+      ],
+      "state": "UP",
+      "name": "HRM-METRO2",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0D:0A:DD",
+      "ip": [
+        "192.168.148.7"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:5F:67:10:5D:F5",
+      "ip": [
+        "192.168.148.8"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:B2:3C",
+      "ip": [
+        "192.168.148.9"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:44:FD:9A:81:EC",
+      "ip": [
+        "192.168.148.11"
+      ],
+      "state": "UP",
+      "name": "M2ITSVRFSHP",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E4:8D:8C:C8:4E:16",
+      "ip": [
+        "192.168.148.12"
+      ],
+      "state": "UP",
+      "type": "ROUTER",
+      "make": "MikroTik",
+      "model": "RB Series",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E4:8D:8C:11:88:AE",
+      "ip": [
+        "192.168.148.13"
+      ],
+      "state": "UP",
+      "name": "MikroTik",
+      "type": "ROUTER",
+      "make": "MikroTik",
+      "model": "RB3011UiAS-RM",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7C:61:45:0E:95",
+      "ip": [
+        "192.168.148.14"
+      ],
+      "state": "UP",
+      "name": "M2SVRDTA",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:40:46:59",
+      "ip": [
+        "192.168.148.16"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:AC:C7",
+      "ip": [
+        "192.168.148.17"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7B:44:16:A9:57",
+      "ip": [
+        "192.168.148.18"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3B:58",
+      "ip": [
+        "192.168.148.20"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:56:3C:5B:B4:EA",
+      "ip": [
+        "192.168.148.21"
+      ],
+      "state": "UP",
+      "type": "DESKTOP",
+      "make": "Gigabyte Technology",
+      "model": "H510M H",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:13:8D:78",
+      "ip": [
+        "192.168.148.22"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "9C:53:22:E8:E4:F1",
+      "ip": [
+        "192.168.148.31"
+      ],
+      "state": "UP",
+      "type": "WIFI",
+      "make": "TP-Link",
+      "model": "TL-WR840N",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:E7:C6:63:5B:CA",
+      "ip": [
+        "192.168.148.32"
+      ],
+      "state": "UP",
+      "name": "NPI635BCA",
+      "type": "PRINTER",
+      "make": "HP",
+      "model": "Color LaserJet M254dw",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "9E:AD:B5:EF:FE:ED",
+      "ip": [
+        "192.168.148.34"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:2A:C2",
+      "ip": [
+        "192.168.148.49"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:4D:BE:EF:FE:ED",
+      "ip": [
+        "192.168.148.51"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:AD:BE:1F:FE:ED",
+      "ip": [
+        "192.168.148.52"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:5D:BE:2F:FE:ED",
+      "ip": [
+        "192.168.148.53"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:5D:BE:3F:FE:ED",
+      "ip": [
+        "192.168.148.54"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:5D:BE:4F:FE:ED",
+      "ip": [
+        "192.168.148.55"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:5D:BE:5F:FE:ED",
+      "ip": [
+        "192.168.148.56"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:AD:BE:6F:FE:ED",
+      "ip": [
+        "192.168.148.57"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:7D:BE:7F:FE:ED",
+      "ip": [
+        "192.168.148.58"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:8D:8E:8F:FE:ED",
+      "ip": [
+        "192.168.148.59"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:AD:9E:9F:FE:ED",
+      "ip": [
+        "192.168.148.60"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:AD:BE:1F:1E:ED",
+      "ip": [
+        "192.168.148.61"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:AD:2E:1F:2E:ED",
+      "ip": [
+        "192.168.148.62"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "DE:5D:BE:3F:3E:ED",
+      "ip": [
+        "192.168.148.63"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:62",
+      "ip": [
+        "192.168.148.80"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:B1",
+      "ip": [
+        "192.168.148.81"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:76",
+      "ip": [
+        "192.168.148.82"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:72",
+      "ip": [
+        "192.168.148.83"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:C4",
+      "ip": [
+        "192.168.148.84"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:28",
+      "ip": [
+        "192.168.148.85"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:74",
+      "ip": [
+        "192.168.148.86"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:4D",
+      "ip": [
+        "192.168.148.89"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:7D",
+      "ip": [
+        "192.168.148.91"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:B5",
+      "ip": [
+        "192.168.148.93"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:2E",
+      "ip": [
+        "192.168.148.94"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:67",
+      "ip": [
+        "192.168.148.95"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:6B",
+      "ip": [
+        "192.168.148.96"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:6D",
+      "ip": [
+        "192.168.148.98"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:25",
+      "ip": [
+        "192.168.148.99"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:BB",
+      "ip": [
+        "192.168.148.101"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:C1",
+      "ip": [
+        "192.168.148.102"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:63",
+      "ip": [
+        "192.168.148.103"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:E6",
+      "ip": [
+        "192.168.148.105"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:47",
+      "ip": [
+        "192.168.148.106"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:63",
+      "ip": [
+        "192.168.148.107"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:75",
+      "ip": [
+        "192.168.148.108"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:90",
+      "ip": [
+        "192.168.148.110"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:BB:A5",
+      "ip": [
+        "192.168.148.111"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:E3:BD",
+      "ip": [
+        "192.168.148.112"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:72:1D",
+      "ip": [
+        "192.168.148.113"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:63:48",
+      "ip": [
+        "192.168.148.114"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:56",
+      "ip": [
+        "192.168.148.115"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:80:B4",
+      "ip": [
+        "192.168.148.116"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:63:4A",
+      "ip": [
+        "192.168.148.117"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:61",
+      "ip": [
+        "192.168.148.118"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:63:46",
+      "ip": [
+        "192.168.148.119"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:17:29",
+      "ip": [
+        "192.168.148.120"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:79:EF",
+      "ip": [
+        "192.168.148.122"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:C5:DA",
+      "ip": [
+        "192.168.148.123"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:C5:F3",
+      "ip": [
+        "192.168.148.124"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:C5:E1",
+      "ip": [
+        "192.168.148.125"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:10:63:67",
+      "ip": [
+        "192.168.148.126"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:BC",
+      "ip": [
+        "192.168.148.127"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:8E",
+      "ip": [
+        "192.168.148.130"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:9D",
+      "ip": [
+        "192.168.148.131"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:A7",
+      "ip": [
+        "192.168.148.132"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:97",
+      "ip": [
+        "192.168.148.133"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:A6",
+      "ip": [
+        "192.168.148.134"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:D1:98",
+      "ip": [
+        "192.168.148.135"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:36:9F",
+      "ip": [
+        "192.168.148.136"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:37:51",
+      "ip": [
+        "192.168.148.138"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:37:59",
+      "ip": [
+        "192.168.148.139"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:37:52",
+      "ip": [
+        "192.168.148.140"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:17:61:12:37:57",
+      "ip": [
+        "192.168.148.141"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2C:8F",
+      "ip": [
+        "192.168.148.176"
+      ],
+      "state": "UP",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:52:2B",
+      "ip": [
+        "192.168.148.177"
+      ],
+      "state": "UP",
+      "name": "M2HRDRSD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:7F:54:07:31:58",
+      "ip": [
+        "192.168.148.178"
+      ],
+      "state": "UP",
+      "name": "M2HRDRKIB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:B8:DB",
+      "ip": [
+        "192.168.148.179"
+      ],
+      "state": "UP",
+      "name": "M2HRDSMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0C:54:7D",
+      "ip": [
+        "192.168.148.180"
+      ],
+      "state": "UP",
+      "name": "M2HRDBJON",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:AF:80",
+      "ip": [
+        "192.168.148.181"
+      ],
+      "state": "UP",
+      "name": "M2HRDRJB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:AF:B4",
+      "ip": [
+        "192.168.148.182"
+      ],
+      "state": "UP",
+      "name": "M2HRDARMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:D2:5F",
+      "ip": [
+        "192.168.148.183"
+      ],
+      "state": "UP",
+      "name": "M2HRD2ND",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7C:61:45:0E:C8",
+      "ip": [
+        "192.168.148.185"
+      ],
+      "state": "UP",
+      "name": "M2HRDPRTM",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3D:5E",
+      "ip": [
+        "192.168.148.186"
+      ],
+      "state": "UP",
+      "name": "M2HRDROHN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3D:1B",
+      "ip": [
+        "192.168.148.187"
+      ],
+      "state": "UP",
+      "name": "M2HRDAKBR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2E:B2",
+      "ip": [
+        "192.168.148.188"
+      ],
+      "state": "UP",
+      "name": "M2HRDHBBR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:31:92:B4:2D:C7",
+      "ip": [
+        "192.168.148.189"
+      ],
+      "state": "UP",
+      "name": "M2HRDRBL",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3B:30",
+      "ip": [
+        "192.168.148.190"
+      ],
+      "state": "UP",
+      "name": "M2HRDMSR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:7F:54:07:31:57",
+      "ip": [
+        "192.168.148.191"
+      ],
+      "state": "UP",
+      "name": "M2HRDTAHOMINA",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:32:F8",
+      "ip": [
+        "192.168.148.192"
+      ],
+      "state": "UP",
+      "name": "M2HRDMDN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:30:9F:E1",
+      "ip": [
+        "192.168.148.193"
+      ],
+      "state": "UP",
+      "name": "M2HRDBPL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:24:2E:4F",
+      "ip": [
+        "192.168.148.194"
+      ],
+      "state": "UP",
+      "name": "M2FRSDJOY",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:30:9F:D3",
+      "ip": [
+        "192.168.148.195"
+      ],
+      "state": "UP",
+      "name": "M2HRD6THGB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:51:38",
+      "ip": [
+        "192.168.148.196"
+      ],
+      "state": "UP",
+      "name": "M2HRDRTON",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:A4:54:81:8E:8C",
+      "ip": [
+        "192.168.148.197"
+      ],
+      "state": "UP",
+      "name": "M2HRD5THMB",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A0:36:BC:AA:67:C9",
+      "ip": [
+        "192.168.148.199"
+      ],
+      "state": "UP",
+      "name": "M2HRDSCN2",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "5C:62:5A:20:C8:FE",
+      "ip": [
+        "192.168.148.200"
+      ],
+      "state": "UP",
+      "name": "LBP226",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP226",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:B5:20:64:5D:BB",
+      "ip": [
+        "192.168.148.203"
+      ],
+      "state": "UP",
+      "name": "M2HRDRKB",
+      "type": "COMPUTER",
+      "make": "Biostar",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7C:61:45:0E:F0",
+      "ip": [
+        "192.168.148.206"
+      ],
+      "state": "UP",
+      "name": "M2HRDRAMIN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:38:B7:F3:89:2A",
+      "ip": [
+        "192.168.148.210"
+      ],
+      "state": "UP",
+      "name": "LBP6230dn",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP6230dn",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "AC:C5:1B:5F:0D:1B",
+      "ip": [
+        "192.168.148.220"
+      ],
+      "state": "UP",
+      "name": "BP5100DN",
+      "type": "PRINTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:45:CB:9D:72:B2",
+      "ip": [
+        "192.168.148.226"
+      ],
+      "state": "UP",
+      "name": "M2HRDSLM",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:B7:C4:8B",
+      "ip": [
+        "192.168.148.232"
+      ],
+      "state": "UP",
+      "name": "M2ACDSMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:B1:3B",
+      "ip": [
+        "192.168.148.251"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0E:C0:E4",
+      "ip": [
+        "192.168.148.252"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:30:4C",
+      "ip": [
+        "192.168.148.253"
+      ],
+      "state": "UP",
+      "name": "M2DAUDIT",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:CF:CE",
+      "ip": [
+        "192.168.148.254"
+      ],
+      "state": "UP",
+      "name": "M2AUTDPDP02",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:38:B7:F2:B9:86",
+      "ip": [
+        "192.168.148.255"
+      ],
+      "state": "UP",
+      "name": "LBP6230dn",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP6230dn",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:30:9F:D8",
+      "ip": [
+        "192.168.149.1"
+      ],
+      "state": "UP",
+      "name": "M2AUDDNEW",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:30:51",
+      "ip": [
+        "192.168.149.16"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:87:2C:75:E5:D5",
+      "ip": [
+        "192.168.149.17"
+      ],
+      "state": "UP",
+      "name": "M2STRDRZ",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7B:44:A4:73:DB",
+      "ip": [
+        "192.168.149.18"
+      ],
+      "state": "UP",
+      "name": "M2STRDAJY",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F0:79:59:90:8F:D3",
+      "ip": [
+        "192.168.149.19"
+      ],
+      "state": "UP",
+      "name": "M2STDJWL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:52:1C",
+      "ip": [
+        "192.168.149.20"
+      ],
+      "state": "UP",
+      "name": "M2STRDSHDT",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "34:97:F6:9A:9B:B2",
+      "ip": [
+        "192.168.149.21"
+      ],
+      "state": "UP",
+      "name": "M2STDSDL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:DC:74:76",
+      "ip": [
+        "192.168.149.22"
+      ],
+      "state": "UP",
+      "name": "M2STDJML",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0B:51:43",
+      "ip": [
+        "192.168.149.23"
+      ],
+      "state": "UP",
+      "name": "M2STDSLM",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A8:5E:45:CF:85:9E",
+      "ip": [
+        "192.168.149.24"
+      ],
+      "state": "UP",
+      "name": "M2STRDARJ",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F0:79:59:96:DD:93",
+      "ip": [
+        "192.168.149.25"
+      ],
+      "state": "UP",
+      "name": "M2STDTFL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2F:7D",
+      "ip": [
+        "192.168.149.26"
+      ],
+      "state": "UP",
+      "name": "M2STDSHVO",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:45:CB:9D:78:0D",
+      "ip": [
+        "192.168.149.27"
+      ],
+      "state": "UP",
+      "name": "M2STRDBBL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:50:E6:E5:69:DC",
+      "ip": [
+        "192.168.149.28"
+      ],
+      "state": "UP",
+      "name": "M2STDFRHD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A4:D7:3C:E7:CB:B4",
+      "ip": [
+        "192.168.149.40"
+      ],
+      "state": "UP",
+      "name": "EPSONE7CBB4.EPSONE7CBB4",
+      "type": "PRINTER",
+      "make": "Epson",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:38:B7:F3:AA:D5",
+      "ip": [
+        "192.168.149.47"
+      ],
+      "state": "UP",
+      "name": "LBP6230dn",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP6230dn",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3B:2F",
+      "ip": [
+        "192.168.149.50"
+      ],
+      "state": "UP",
+      "name": "M2STRDAMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:26:ED:B5",
+      "ip": [
+        "192.168.149.51"
+      ],
+      "state": "UP",
+      "name": "M2STRDSFL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:28:18:00",
+      "ip": [
+        "192.168.149.52"
+      ],
+      "state": "UP",
+      "name": "M2STDSHSR",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:B5:20:64:5E:8A",
+      "ip": [
+        "192.168.149.53"
+      ],
+      "state": "UP",
+      "name": "M2STDNGNDN",
+      "type": "COMPUTER",
+      "make": "Biostar",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "AC:C5:1B:6D:A1:0E",
+      "ip": [
+        "192.168.149.60"
+      ],
+      "state": "UP",
+      "name": "BP5100DN",
+      "type": "PRINTER",
+      "make": "Pantum",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "AC:C5:1B:6D:A1:01",
+      "ip": [
+        "192.168.149.65"
+      ],
+      "state": "UP",
+      "name": "BP5100DN",
+      "type": "PRINTER",
+      "make": "Pantum",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:10:C9:84:97:A6",
+      "ip": [
+        "192.168.149.66"
+      ],
+      "state": "UP",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E0:3F:49:4A:D9:CE",
+      "ip": [
+        "192.168.149.67"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "34:5A:60:B2:60:B4",
+      "ip": [
+        "192.168.149.68"
+      ],
+      "state": "UP",
+      "name": "SHAFIQ",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7B:44:16:A8:0D",
+      "ip": [
+        "192.168.149.69"
+      ],
+      "state": "UP",
+      "name": "M2EMBDUZL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:46:5D:73:85:88",
+      "ip": [
+        "192.168.149.70"
+      ],
+      "state": "UP",
+      "name": "M2EMDFIN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:02:66:47",
+      "ip": [
+        "192.168.149.71"
+      ],
+      "state": "UP",
+      "name": "M2EMBDNEW",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:DB:0D:73",
+      "ip": [
+        "192.168.149.72"
+      ],
+      "state": "UP",
+      "name": "M2EMBDHSN",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:4D:8F:C2:D8:2A",
+      "ip": [
+        "192.168.149.80"
+      ],
+      "state": "UP",
+      "name": "NPIC2D82A",
+      "type": "PRINTER",
+      "make": "HP",
+      "model": "JetDirect JD149",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:43:AE:12:6F:F7",
+      "ip": [
+        "192.168.149.86"
+      ],
+      "state": "UP",
+      "name": "M2CADDPPU",
+      "type": "DESKTOP",
+      "make": "MSI",
+      "model": "MS-7D46",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:82:F1:EA",
+      "ip": [
+        "192.168.149.87"
+      ],
+      "state": "UP",
+      "name": "M2CADDSZN",
+      "type": "DESKTOP",
+      "make": "Gigabyte Technology",
+      "model": "B650M H",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:82:F2:76",
+      "ip": [
+        "192.168.149.88"
+      ],
+      "state": "UP",
+      "name": "M2CADDNBL",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:D0:2B:25:87:54",
+      "ip": [
+        "192.168.149.90"
+      ],
+      "state": "UP",
+      "name": "M2CADSMSL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "34:5A:60:B2:60:B5",
+      "ip": [
+        "192.168.149.91"
+      ],
+      "state": "UP",
+      "name": "M2CADDAMIN",
+      "type": "SERVER",
+      "make": "MSI",
+      "model": "MS-7C96",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "40:B0:76:40:1A:56",
+      "ip": [
+        "192.168.149.92"
+      ],
+      "state": "UP",
+      "name": "M2CADDMKSDL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:82:F2:57",
+      "ip": [
+        "192.168.149.93"
+      ],
+      "state": "UP",
+      "name": "M2CADDNYM",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:D3:76:AA",
+      "ip": [
+        "192.168.149.94"
+      ],
+      "state": "UP",
+      "name": "M2CADDGB04",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:7E:87:E3",
+      "ip": [
+        "192.168.149.95"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:D3:76:AC",
+      "ip": [
+        "192.168.149.96"
+      ],
+      "state": "UP",
+      "name": "M2CADSMY",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:D3:75:E7",
+      "ip": [
+        "192.168.149.97"
+      ],
+      "state": "UP",
+      "name": "M2CADDJHRL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3C:28",
+      "ip": [
+        "192.168.149.99"
+      ],
+      "state": "UP",
+      "name": "M2DCAD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:8C:3A",
+      "ip": [
+        "192.168.149.100"
+      ],
+      "state": "UP",
+      "name": "M2CADD6PTR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2F:E3",
+      "ip": [
+        "192.168.149.101"
+      ],
+      "state": "UP",
+      "name": "M2CADD6PTL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:82:F2:92",
+      "ip": [
+        "192.168.149.102"
+      ],
+      "state": "UP",
+      "name": "M2CADDSHN",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:10:C9:43:52:0F",
+      "ip": [
+        "192.168.149.103"
+      ],
+      "state": "UP",
+      "name": "M2CADTRKS",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:2F:DE",
+      "ip": [
+        "192.168.149.104"
+      ],
+      "state": "UP",
+      "name": "M2CADDMRD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:10:C9:84:9A:B1",
+      "ip": [
+        "192.168.149.105"
+      ],
+      "state": "UP",
+      "name": "M2CADDKBR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:13:8D:7E",
+      "ip": [
+        "192.168.149.106"
+      ],
+      "state": "UP",
+      "name": "NABAB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B4:22:00:D9:C8:1E",
+      "ip": [
+        "192.168.149.108"
+      ],
+      "state": "UP",
+      "name": "BRNB42200D9C81E",
+      "type": "PRINTER",
+      "make": "Brother",
+      "model": "HL Series",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B4:22:00:D9:6B:92",
+      "ip": [
+        "192.168.149.109"
+      ],
+      "state": "UP",
+      "name": "BRNB42200D96B92",
+      "type": "PRINTER",
+      "make": "Brother",
+      "model": "HL Series",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "6C:3C:7C:87:25:5E",
+      "ip": [
+        "192.168.149.110"
+      ],
+      "state": "UP",
+      "type": "PRINTER",
+      "make": "Canon",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "CC:22:37:E0:03:49",
+      "ip": [
+        "192.168.149.121"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "CC:22:37:E0:03:4C",
+      "ip": [
+        "192.168.149.122"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "CC:22:37:E0:03:4B",
+      "ip": [
+        "192.168.149.123"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "CC:22:37:E0:03:4A",
+      "ip": [
+        "192.168.149.124"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B8:27:EB:FA:65:A8",
+      "ip": [
+        "192.168.149.125"
+      ],
+      "state": "UP",
+      "name": "SMARTBOX",
+      "type": "RASPBERRY",
+      "make": "Raspberry Pi",
+      "model": "Raspberry Pi",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B8:27:EB:6A:FA:3E",
+      "ip": [
+        "192.168.149.126"
+      ],
+      "state": "UP",
+      "name": "SMARTBOX",
+      "type": "RASPBERRY",
+      "make": "Raspberry Pi",
+      "model": "Raspberry Pi",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "6C:02:E0:97:24:1F",
+      "ip": [
+        "192.168.149.134"
+      ],
+      "state": "UP",
+      "name": "KM-SERVER",
+      "type": "DESKTOP",
+      "make": "HP",
+      "model": "ProDesk 400 G6 DM",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:45:53:4D",
+      "ip": [
+        "192.168.149.135"
+      ],
+      "state": "UP",
+      "name": "M2CTDAUTOCTR",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7C:61:45:0E:96",
+      "ip": [
+        "192.168.149.136"
+      ],
+      "state": "UP",
+      "name": "M2CTDMHBB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A0:36:BC:28:79:3E",
+      "ip": [
+        "192.168.149.138"
+      ],
+      "state": "UP",
+      "name": "M2CTDRNI",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "BOAMOT-507",
+      "first_seen": "2025-11-05T06:41:11.062Z",
+      "last_changed": "2025-11-05T06:41:11.062Z"
+    },
+    {
+      "mac": "54:04:A6:92:A3:4F",
+      "ip": [
+        "192.168.149.139"
+      ],
+      "state": "UP",
+      "name": "M2CTGDANS",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:41:11.062Z"
+    },
+    {
+      "mac": "04:92:26:CF:42:6A",
+      "ip": [
+        "192.168.149.140"
+      ],
+      "state": "UP",
+      "name": "M2CTDIMRN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "08:62:66:9E:9D:56",
+      "ip": [
+        "192.168.149.141"
+      ],
+      "state": "UP",
+      "name": "M2CTDSNT",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:B2:91:D6",
+      "ip": [
+        "192.168.149.142"
+      ],
+      "state": "UP",
+      "name": "M2STRDASD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0E:A4:3C",
+      "ip": [
+        "192.168.149.143"
+      ],
+      "state": "UP",
+      "name": "M2CTDKRML",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:D9:F9:D5",
+      "ip": [
+        "192.168.149.144"
+      ],
+      "state": "UP",
+      "name": "M2CTDSKL",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2F:E4",
+      "ip": [
+        "192.168.149.146"
+      ],
+      "state": "UP",
+      "name": "M2DCTBNDC",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "6C:3C:7C:87:25:5C",
+      "ip": [
+        "192.168.149.149"
+      ],
+      "state": "UP",
+      "name": "LBP6230dn",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP6230dn",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "AC:C5:1B:9C:52:C0",
+      "ip": [
+        "192.168.149.165"
+      ],
+      "state": "UP",
+      "name": "BP5100DN",
+      "type": "PRINTER",
+      "make": "Pantum",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:AF:1E:62",
+      "ip": [
+        "192.168.149.166"
+      ],
+      "state": "UP",
+      "name": "M2MRDAMT",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:B2:4F",
+      "ip": [
+        "192.168.149.167"
+      ],
+      "state": "UP",
+      "name": "M2MRCNDMDL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:83:B5:BB",
+      "ip": [
+        "192.168.149.169"
+      ],
+      "state": "UP",
+      "name": "M2MRDAMIYA",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3B:B8",
+      "ip": [
+        "192.168.149.170"
+      ],
+      "state": "UP",
+      "name": "M2MRDABR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:4D:8F:C2:F8:98",
+      "ip": [
+        "192.168.149.183"
+      ],
+      "state": "UP",
+      "name": "NPIC2F898",
+      "type": "PRINTER",
+      "make": "HP",
+      "model": "JetDirect JD149",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "80:AF:CA:16:60:B0",
+      "ip": [
+        "192.168.149.186"
+      ],
+      "state": "UP",
+      "name": "M2INDALI",
+      "type": "ROUTER",
+      "make": "Cudy",
+      "model": "Cudy router",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:E0:4C:5B:E5:2F",
+      "ip": [
+        "192.168.149.187"
+      ],
+      "state": "UP",
+      "name": "M2INPTDMFZ",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:50:E6:E5:69:AA",
+      "ip": [
+        "192.168.149.189"
+      ],
+      "state": "UP",
+      "name": "M2IND6GBKNBN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:B5:20:6C:9D:8A",
+      "ip": [
+        "192.168.149.190"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-TGJA96K",
+      "type": "COMPUTER",
+      "make": "Biostar",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0E:C0:E1",
+      "ip": [
+        "192.168.149.206"
+      ],
+      "state": "UP",
+      "name": "M2IEDKNG",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "0C:9D:92:BC:D7:2C",
+      "ip": [
+        "192.168.149.207"
+      ],
+      "state": "UP",
+      "name": "M2IEDMSU",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:D1:D0",
+      "ip": [
+        "192.168.149.209"
+      ],
+      "state": "UP",
+      "name": "M2IEDGB4TH",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:E8:66:14",
+      "ip": [
+        "192.168.149.210"
+      ],
+      "state": "UP",
+      "name": "M2IEDCMMN",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "40:16:7E:69:DB:D5",
+      "ip": [
+        "192.168.149.211"
+      ],
+      "state": "UP",
+      "name": "M2IEDRQ",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:7B:44:4F:86:BC",
+      "ip": [
+        "192.168.149.212"
+      ],
+      "state": "UP",
+      "name": "M2IEDDPNTA",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:B7:C4:1C",
+      "ip": [
+        "192.168.149.213"
+      ],
+      "state": "UP",
+      "name": "M2IEDRIS",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "0C:9D:92:CC:9E:CB",
+      "ip": [
+        "192.168.149.214"
+      ],
+      "state": "UP",
+      "name": "M2IEDTFJL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:8B:B1",
+      "ip": [
+        "192.168.149.215"
+      ],
+      "state": "UP",
+      "name": "M2IEDASD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2F:DA",
+      "ip": [
+        "192.168.149.217"
+      ],
+      "state": "UP",
+      "name": "M2IEDAKS",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:2F:DE",
+      "ip": [
+        "192.168.149.218"
+      ],
+      "state": "UP",
+      "name": "M2IED5THGB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:31:31:4E",
+      "ip": [
+        "192.168.149.219"
+      ],
+      "state": "UP",
+      "name": "M2IEDSHSVN",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:4D:6D:4D",
+      "ip": [
+        "192.168.149.221"
+      ],
+      "state": "UP",
+      "name": "M2IEDSMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E8:9C:25:28:8F:80",
+      "ip": [
+        "192.168.149.225"
+      ],
+      "state": "UP",
+      "name": "M2IEDGLB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:38:B7:F3:81:40",
+      "ip": [
+        "192.168.149.250"
+      ],
+      "state": "UP",
+      "name": "LBP6230dn",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP6230dn",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:A4:54:81:8E:14",
+      "ip": [
+        "192.168.150.1"
+      ],
+      "state": "UP",
+      "name": "M2MNDHMMT-M",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A0:36:BC:34:EA:17",
+      "ip": [
+        "192.168.150.4"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-1UUHSJE",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:87:2C:56:6E:A0",
+      "ip": [
+        "192.168.150.16"
+      ],
+      "state": "UP",
+      "name": "M2RFID2MB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "84:24:8D:EF:01:52",
+      "ip": [
+        "192.168.150.17"
+      ],
+      "state": "UP",
+      "name": "FX7500EF0152",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E0:3F:49:56:76:74",
+      "ip": [
+        "192.168.150.18"
+      ],
+      "state": "UP",
+      "name": "M2SCDGB2GU",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "84:24:8D:FB:AF:57",
+      "ip": [
+        "192.168.150.19"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "38:D5:47:1B:C0:59",
+      "ip": [
+        "192.168.150.20"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-QH72U0K",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "84:24:8D:EF:01:79",
+      "ip": [
+        "192.168.150.21"
+      ],
+      "state": "UP",
+      "name": "FX7500EF0179",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E0:CB:4E:CE:82:CA",
+      "ip": [
+        "192.168.150.22"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-C2H3C68",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "4C:ED:FB:C1:F7:B7",
+      "ip": [
+        "192.168.150.24"
+      ],
+      "state": "UP",
+      "name": "M2FIN7THDRFID",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "84:24:8D:FB:2D:54",
+      "ip": [
+        "192.168.150.25"
+      ],
+      "state": "UP",
+      "name": "FX7500FB2D54",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:A4:54:81:92:52",
+      "ip": [
+        "192.168.150.26"
+      ],
+      "state": "UP",
+      "name": "M2FND3RID",
+      "type": "DESKTOP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:BF:48:7C:3C:51",
+      "ip": [
+        "192.168.150.28"
+      ],
+      "state": "UP",
+      "name": "M2SCND4MBGU",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:6F:05:3B",
+      "ip": [
+        "192.168.150.37"
+      ],
+      "state": "UP",
+      "name": "M2FND4THTMY",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:CB:8A:DE:D9:81",
+      "ip": [
+        "192.168.150.38"
+      ],
+      "state": "UP",
+      "name": "M2SCND3RDTMY",
+      "type": "DESKTOP",
+      "make": "MSI",
+      "model": "Motherboard",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:87:2C:56:91:EA",
+      "ip": [
+        "192.168.150.39"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:28:19:73",
+      "ip": [
+        "192.168.150.40"
+      ],
+      "state": "UP",
+      "name": "M2SCANDT6TF",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:24:30:39",
+      "ip": [
+        "192.168.150.42"
+      ],
+      "state": "UP",
+      "name": "M2SCNDTMMY3GB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:7F:54:C6:EC:38",
+      "ip": [
+        "192.168.150.43"
+      ],
+      "state": "UP",
+      "name": "M2SCDTMY5NB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:E0:4C:C1:A3:DA",
+      "ip": [
+        "192.168.150.44"
+      ],
+      "state": "UP",
+      "name": "M2FNDTMYM2ND",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "10:7C:61:45:0F:38",
+      "ip": [
+        "192.168.150.45"
+      ],
+      "state": "UP",
+      "name": "M2FND",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C4:7D:CC:6A:78:DD",
+      "ip": [
+        "192.168.150.60"
+      ],
+      "state": "UP",
+      "name": "FX75006A78DD",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C4:7D:CC:74:93:1A",
+      "ip": [
+        "192.168.150.61"
+      ],
+      "state": "UP",
+      "type": "APPLIANCE",
+      "make": "Microsoft",
+      "model": "Windows CE Embedded System",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:6F:65:E9:73:B5",
+      "ip": [
+        "192.168.150.62"
+      ],
+      "state": "UP",
+      "name": "M2FIND2NDMTL",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "34:5A:60:B2:5F:F4",
+      "ip": [
+        "192.168.150.63"
+      ],
+      "state": "UP",
+      "name": "M2RFIDDGB3MTL",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C4:7D:CC:6D:FB:CE",
+      "ip": [
+        "192.168.150.64"
+      ],
+      "state": "UP",
+      "name": "FX75006DFBCE",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "C4:7D:CC:5F:E6:1B",
+      "ip": [
+        "192.168.150.65"
+      ],
+      "state": "UP",
+      "name": "FX75005FE61B",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:60:00:E3:15:F6",
+      "ip": [
+        "192.168.150.66"
+      ],
+      "state": "UP",
+      "name": "M2APCDMRFL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:5D:64:39:B1:25",
+      "ip": [
+        "192.168.150.67"
+      ],
+      "state": "UP",
+      "name": "M2APCDRBL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "10:BF:48:7C:3C:BD",
+      "ip": [
+        "192.168.150.68"
+      ],
+      "state": "UP",
+      "name": "M2APCDUZZL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:5F:67:10:62:EA",
+      "ip": [
+        "192.168.150.69"
+      ],
+      "state": "UP",
+      "name": "M2APDKWSR",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:A4:4C:42:6A:1B",
+      "ip": [
+        "192.168.150.70"
+      ],
+      "state": "UP",
+      "name": "M2APCDRHM",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:D0:1A",
+      "ip": [
+        "192.168.150.71"
+      ],
+      "state": "UP",
+      "name": "M2APCD2GB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:CE:FC",
+      "ip": [
+        "192.168.150.72"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-CFBS5QV",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:31:D6",
+      "ip": [
+        "192.168.150.73"
+      ],
+      "state": "UP",
+      "name": "M2APCD4THGB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:52:8E",
+      "ip": [
+        "192.168.150.74"
+      ],
+      "state": "UP",
+      "name": "M2APCDMLTN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:DB:E7:1F",
+      "ip": [
+        "192.168.150.75"
+      ],
+      "state": "UP",
+      "name": "M2APCDMMN",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:30:46",
+      "ip": [
+        "192.168.150.97"
+      ],
+      "state": "UP",
+      "name": "M2FNDSMN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:D4:35:A5:66:EC",
+      "ip": [
+        "192.168.150.99"
+      ],
+      "state": "UP",
+      "name": "M2CADDZNZLA",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:4D:54:D1:26:4F",
+      "ip": [
+        "192.168.150.111"
+      ],
+      "state": "UP",
+      "name": "M2FNDSGR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3D:AB",
+      "ip": [
+        "192.168.150.113"
+      ],
+      "state": "UP",
+      "name": "M2FNDBKL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3B:12",
+      "ip": [
+        "192.168.150.114"
+      ],
+      "state": "UP",
+      "name": "M2FINDBPLB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:13:86:35",
+      "ip": [
+        "192.168.150.115"
+      ],
+      "state": "UP",
+      "name": "M2FINDSJN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E8:9C:25:79:A7:E3",
+      "ip": [
+        "192.168.150.116"
+      ],
+      "state": "UP",
+      "name": "M2FNDALGR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:13:89:B5",
+      "ip": [
+        "192.168.150.117"
+      ],
+      "state": "UP",
+      "name": "M2FINDJNGR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:A4:4C:41:C4:16",
+      "ip": [
+        "192.168.150.119"
+      ],
+      "state": "UP",
+      "name": "M2FINDGB4",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "BC:AE:C5:5E:0F:7F",
+      "ip": [
+        "192.168.150.120"
+      ],
+      "state": "UP",
+      "name": "CM0076",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:30:9E:B1",
+      "ip": [
+        "192.168.150.122"
+      ],
+      "state": "UP",
+      "name": "M2FNDSRBN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "BC:AE:C5:5E:0F:73",
+      "ip": [
+        "192.168.150.123"
+      ],
+      "state": "UP",
+      "name": "M2FND5TH",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:2B:23:93",
+      "ip": [
+        "192.168.150.124"
+      ],
+      "state": "UP",
+      "name": "M2FIND3RDMB",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:4D:54:D1:26:42",
+      "ip": [
+        "192.168.150.125"
+      ],
+      "state": "UP",
+      "name": "MFND6THFL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:E5:49:AC:47:3E",
+      "ip": [
+        "192.168.150.126"
+      ],
+      "state": "UP",
+      "name": "M2FND4MBERP",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:02:66:1A",
+      "ip": [
+        "192.168.150.127"
+      ],
+      "state": "UP",
+      "name": "M2FNDSADIA",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "70:71:BC:31:F1:99",
+      "ip": [
+        "192.168.150.131"
+      ],
+      "state": "UP",
+      "name": "M2FIND2NDERP",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "6C:3C:7C:E8:A9:26",
+      "ip": [
+        "192.168.150.135"
+      ],
+      "state": "UP",
+      "name": "LBP245/246/248",
+      "type": "PRINTER",
+      "make": "Canon",
+      "model": "LBP245/246/248",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:C0:4D:0B:30:22",
+      "ip": [
+        "192.168.150.138"
+      ],
+      "state": "UP",
+      "name": "M2FNDLFTVR",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:40:45:78",
+      "ip": [
+        "192.168.150.139"
+      ],
+      "state": "UP",
+      "name": "M2FNDMSTKM",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "3C:7C:3F:BD:3A:E7",
+      "ip": [
+        "192.168.150.140"
+      ],
+      "state": "UP",
+      "name": "M2RFIDDRFIQ",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:83:B5:40",
+      "ip": [
+        "192.168.150.141"
+      ],
+      "state": "UP",
+      "name": "M2BYRDCKINS",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:98:52:A4",
+      "ip": [
+        "192.168.150.142"
+      ],
+      "state": "UP",
+      "name": "M2BYRDCAL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:AF:1A:A1",
+      "ip": [
+        "192.168.150.143"
+      ],
+      "state": "UP",
+      "name": "M2BYRDGU",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "08:62:66:35:F0:8F",
+      "ip": [
+        "192.168.150.144"
+      ],
+      "state": "UP",
+      "name": "M2BYRDACNA",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E8:9C:25:79:A5:02",
+      "ip": [
+        "192.168.150.145"
+      ],
+      "state": "UP",
+      "name": "M2BYRDVRNR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:87:2C:56:A0:13",
+      "ip": [
+        "192.168.150.146"
+      ],
+      "state": "UP",
+      "name": "M2BYRDAKTRL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:12:30:AC",
+      "ip": [
+        "192.168.150.147"
+      ],
+      "state": "UP",
+      "name": "M2TMYDJHD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "FC:34:97:13:86:52",
+      "ip": [
+        "192.168.150.148"
+      ],
+      "state": "UP",
+      "name": "M2BYRDGUNW",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:2B:25:A7",
+      "ip": [
+        "192.168.150.149"
+      ],
+      "state": "UP",
+      "name": "M2BYRDCK",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:BB:EF:A0",
+      "ip": [
+        "192.168.150.150"
+      ],
+      "state": "UP",
+      "name": "M2BYRDMLK",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A0:36:BC:34:CE:38",
+      "ip": [
+        "192.168.150.151"
+      ],
+      "state": "UP",
+      "name": "M2BYRDCKIN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "AC:C5:1B:6A:8A:24",
+      "ip": [
+        "192.168.150.170"
+      ],
+      "state": "UP",
+      "name": "BP5100DN",
+      "type": "PRINTER",
+      "make": "Pantum",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "3C:7C:3F:2A:CE:CF",
+      "ip": [
+        "192.168.150.171"
+      ],
+      "state": "UP",
+      "name": "M2FRDFIRE",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "10:FF:E0:02:66:D3",
+      "ip": [
+        "192.168.150.186"
+      ],
+      "state": "UP",
+      "name": "M2CVLDAJTH",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:10:C9:8B:14:73",
+      "ip": [
+        "192.168.150.193"
+      ],
+      "state": "UP",
+      "name": "M2MNTDDEB",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "A0:36:BC:28:78:0B",
+      "ip": [
+        "192.168.150.194"
+      ],
+      "state": "UP",
+      "name": "M2MTDSBR",
+      "type": "DESKTOP",
+      "make": "Asus",
+      "model": "Desktop",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:8A:10:7D:D6:C3",
+      "ip": [
+        "192.168.150.197"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "74:D5:C6:23:B9:13",
+      "ip": [
+        "192.168.150.198"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:0A:75:17:79:57",
+      "ip": [
+        "192.168.150.199"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:0A:75:3E:3A:44",
+      "ip": [
+        "192.168.150.200"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:7F:54:C6:EC:3A",
+      "ip": [
+        "192.168.150.207"
+      ],
+      "state": "UP",
+      "name": "M2QADATUL",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:2B:25:A9",
+      "ip": [
+        "192.168.150.208"
+      ],
+      "state": "UP",
+      "name": "M2QLTDSRMNGR",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:87:2C:75:E9:1F",
+      "ip": [
+        "192.168.150.209"
+      ],
+      "state": "UP",
+      "name": "M2QADASD",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "C8:7F:54:07:30:CB",
+      "ip": [
+        "192.168.150.211"
+      ],
+      "state": "UP",
+      "name": "M2GB6THPTN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:31:92:B3:F5:AF",
+      "ip": [
+        "192.168.150.212"
+      ],
+      "state": "UP",
+      "name": "M2CTDMMN",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:4D:54:D1:2B:8D",
+      "ip": [
+        "192.168.150.216"
+      ],
+      "state": "UP",
+      "name": "M2SKLDDP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:31:BF:28:A3:85",
+      "ip": [
+        "192.168.150.221"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "90:DF:7D:91:D2:F5",
+      "ip": [
+        "192.168.150.236"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "CC:E6:86:FC:09:6D",
+      "ip": [
+        "192.168.151.0"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:B0:73:7B:80:59",
+      "ip": [
+        "192.168.151.1"
+      ],
+      "state": "UP",
+      "type": "MOBILE",
+      "make": "Realme",
+      "model": "narzo 50i",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "F0:9E:4A:09:0C:FE",
+      "ip": [
+        "192.168.151.2"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Dell",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "48:E7:DA:A5:5A:B5",
+      "ip": [
+        "192.168.151.3"
+      ],
+      "state": "UP",
+      "name": "M2ITLSUP-ASUS",
+      "type": "COMPUTER",
+      "make": "Canon",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:CE:51:7F:C4:3C",
+      "ip": [
+        "192.168.151.5"
+      ],
+      "state": "UP",
+      "name": "CQA-L08",
+      "type": "LAPTOP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "48:E7:DA:A5:4F:DF",
+      "ip": [
+        "192.168.151.6"
+      ],
+      "state": "UP",
+      "name": "M2IELSYD",
+      "type": "COMPUTER",
+      "make": "Canon",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "8C:53:E6:D9:E2:57",
+      "ip": [
+        "192.168.151.10"
+      ],
+      "state": "UP",
+      "name": "M2IELGLB",
+      "type": "LAPTOP",
+      "make": "HP",
+      "model": "17-cn3xxx",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "1C:7A:CF:41:C9:D7",
+      "ip": [
+        "192.168.151.16"
+      ],
+      "state": "UP",
+      "name": "I2302",
+      "type": "MOBILE",
+      "make": "Vivo",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "6C:02:E0:03:5F:F4",
+      "ip": [
+        "192.168.151.19"
+      ],
+      "state": "UP",
+      "name": "M2PLNLGLB",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "28:D0:43:53:57:4E",
+      "ip": [
+        "192.168.151.20"
+      ],
+      "state": "UP",
+      "name": "M2PDLAZGIR",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "98:54:1B:6A:E2:44",
+      "ip": [
+        "192.168.151.25"
+      ],
+      "state": "UP",
+      "name": "DESKTOP-QV6J5ES",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "EC:F4:0C:26:80:FC",
+      "ip": [
+        "192.168.151.42"
+      ],
+      "state": "UP",
+      "type": "SWITCH",
+      "make": "Cisco",
+      "model": "CBS350-8T-E-2G",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "28:C5:C8:31:70:06",
+      "ip": [
+        "192.168.151.44"
+      ],
+      "state": "UP",
+      "name": "M2CADLKABR",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "1C:CE:51:7F:C4:00",
+      "ip": [
+        "192.168.151.46"
+      ],
+      "state": "UP",
+      "name": "CQA-L04",
+      "type": "LAPTOP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D4:B7",
+      "ip": [
+        "192.168.151.48"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:01:00",
+      "ip": [
+        "192.168.151.50"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D0:37:45:63:2C:33",
+      "ip": [
+        "192.168.151.52"
+      ],
+      "state": "UP",
+      "name": "KM-LABELER-03",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:C2:C6:2C:D3:46",
+      "ip": [
+        "192.168.151.54"
+      ],
+      "state": "UP",
+      "name": "KM-LABELER-02",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "5C:A6:E6:9D:A6:03",
+      "ip": [
+        "192.168.151.55"
+      ],
+      "state": "UP",
+      "name": "KM-CONTROL-01",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:3E:AA:20:6B:6B",
+      "ip": [
+        "192.168.151.56"
+      ],
+      "state": "UP",
+      "name": "KM-CONTROL-02",
+      "type": "COMPUTER",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:C2:76",
+      "ip": [
+        "192.168.151.57"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D0:BC",
+      "ip": [
+        "192.168.151.63"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:C4:28",
+      "ip": [
+        "192.168.151.70"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:C2:83",
+      "ip": [
+        "192.168.151.71"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "04:42:1A:B2:45:F0",
+      "ip": [
+        "192.168.151.73"
+      ],
+      "state": "UP",
+      "name": "SHARIF",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "30:D0:42:1C:77:4E",
+      "ip": [
+        "192.168.151.74"
+      ],
+      "state": "UP",
+      "name": "M2EMBLTMY",
+      "type": "COMPUTER",
+      "make": "Dell",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D1:28",
+      "ip": [
+        "192.168.151.77"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D1:2A",
+      "ip": [
+        "192.168.151.78"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "60:18:95:1E:E5:4B",
+      "ip": [
+        "192.168.151.79"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "Dell",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:CC:94",
+      "ip": [
+        "192.168.151.79"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:41:11.062Z"
+    },
+    {
+      "mac": "F4:92:BF:16:77:00",
+      "ip": [
+        "192.168.151.81"
+      ],
+      "state": "UP",
+      "name": "AP0016",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "E0:63:DA:A9:A2:F0",
+      "ip": [
+        "192.168.151.84"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:75:64",
+      "ip": [
+        "192.168.151.85"
+      ],
+      "state": "UP",
+      "name": "AP0022",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D1:50",
+      "ip": [
+        "192.168.151.86"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:EF",
+      "ip": [
+        "192.168.151.87"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:E9",
+      "ip": [
+        "192.168.151.88"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:75:50",
+      "ip": [
+        "192.168.151.89"
+      ],
+      "state": "UP",
+      "name": "AP0026",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "7C:4D:8F:54:CC:09",
+      "ip": [
+        "192.168.151.90"
+      ],
+      "state": "UP",
+      "type": "LAPTOP",
+      "make": "HP",
+      "model": "250 15.6 G9",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:77:40",
+      "ip": [
+        "192.168.151.92"
+      ],
+      "state": "UP",
+      "name": "AP0029",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:2C",
+      "ip": [
+        "192.168.151.93"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:E5",
+      "ip": [
+        "192.168.151.94"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:D5:3F",
+      "ip": [
+        "192.168.151.95"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:77:43",
+      "ip": [
+        "192.168.151.96"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:F3",
+      "ip": [
+        "192.168.151.97"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:74:00",
+      "ip": [
+        "192.168.151.98"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:B4",
+      "ip": [
+        "192.168.151.99"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:B6",
+      "ip": [
+        "192.168.151.100"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:77:38",
+      "ip": [
+        "192.168.151.101"
+      ],
+      "state": "UP",
+      "name": "AP0038",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:DA:53",
+      "ip": [
+        "192.168.151.102"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:D8:F8",
+      "ip": [
+        "192.168.151.103"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:D9:A2",
+      "ip": [
+        "192.168.151.104"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:DA:68",
+      "ip": [
+        "192.168.151.105"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:D8:F1",
+      "ip": [
+        "192.168.151.106"
+      ],
+      "state": "UP",
+      "name": "AP0043",
+      "type": "WIFI",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:2C:D9:1C",
+      "ip": [
+        "192.168.151.108"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "18:47:3D:5F:FC:EB",
+      "ip": [
+        "192.168.151.109"
+      ],
+      "state": "UP",
+      "name": "M2ITLRB",
+      "type": "LAPTOP",
+      "make": "Dell",
+      "model": "Vostro 3501",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D8:B3:70:B6:C7:7F",
+      "ip": [
+        "192.168.151.111"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "F4:92:BF:16:76:CE",
+      "ip": [
+        "192.168.151.116"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "Ubiquiti Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "68:FF:7B:5A:73:96",
+      "ip": [
+        "192.168.151.119"
+      ],
+      "state": "UP",
+      "type": "NETWORK_APPLIANCE",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "D4:6E:0E:49:37:73",
+      "ip": [
+        "192.168.151.121"
+      ],
+      "state": "UP",
+      "type": "WIFI",
+      "make": "TP-Link",
+      "model": "450Mbps High Power Wireless N Router",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:A5:01:F0",
+      "ip": [
+        "192.168.151.122"
+      ],
+      "state": "UP",
+      "type": "ROUTER",
+      "make": "Asus",
+      "model": "RT-AX1800HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:A5:01:D0",
+      "ip": [
+        "192.168.151.123"
+      ],
+      "state": "UP",
+      "type": "ROUTER",
+      "make": "Asus",
+      "model": "RT-AX1800HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B4:0F:3B:F0:F4:F0",
+      "ip": [
+        "192.168.151.125"
+      ],
+      "state": "UP",
+      "type": "WIFI",
+      "make": "Tenda",
+      "model": "Wireless Router",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "50:EB:F6:69:C5:B8",
+      "ip": [
+        "192.168.151.126"
+      ],
+      "state": "UP",
+      "type": "ROUTER",
+      "make": "Asus",
+      "model": "RT-AX1800HP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "78:CD:8E:9A:BF:AD",
+      "ip": [
+        "192.168.151.128"
+      ],
+      "state": "UP",
+      "type": "WIFI",
+      "make": "SMC Networks",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "2C:58:B9:72:71:DE",
+      "ip": [
+        "192.168.151.129"
+      ],
+      "state": "UP",
+      "type": "COMPUTER",
+      "make": "HP",
+      "first_seen": "2025-11-05T06:39:33.476Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "48:22:54:12:0C:A5",
+      "ip": [
+        "192.168.151.131"
+      ],
+      "state": "UP",
+      "name": "Wireless Router Archer C20",
+      "type": "WIFI",
+      "make": "TP-Link",
+      "model": "Archer C20",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:AF:1F:82:4D:98",
+      "ip": [
+        "192.168.151.136"
+      ],
+      "state": "UP",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "B4:0F:3B:5A:0F:29",
+      "ip": [
+        "192.168.151.231"
+      ],
+      "state": "UP",
+      "type": "WIFI",
+      "first_seen": "2025-11-05T05:59:26.427Z"
+    },
+    {
+      "mac": "00:03:21:11:16:D6",
+      "ip": [
+        "192.168.148.97"
+      ],
+      "state": "DOWN",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "50:EB:F6:24:2F:9F",
+      "ip": [
+        "192.168.150.41"
+      ],
+      "state": "DOWN",
+      "type": "COMPUTER",
+      "make": "Asus",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "10:FF:E0:02:68:8C",
+      "ip": [
+        "192.168.150.132"
+      ],
+      "state": "DOWN",
+      "name": "M2FND7THERP",
+      "type": "COMPUTER",
+      "make": "Gigabyte Technology",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "14:9B:F3:2C:DE:8F",
+      "ip": [
+        "192.168.151.27"
+      ],
+      "state": "DOWN",
+      "name": "OPPO-F21-Pro-5G",
+      "type": "MOBILE",
+      "make": "Oppo",
+      "model": "F21 Pro 5G",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "CC:E6:86:FB:0C:6D",
+      "ip": [
+        "192.168.151.32"
+      ],
+      "state": "DOWN",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "5C:A6:E6:9D:A6:60",
+      "ip": [
+        "192.168.151.38"
+      ],
+      "state": "DOWN",
+      "type": "NETWORK_APPLIANCE",
+      "make": "TP-Link",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "F0:9E:4A:08:D8:56",
+      "ip": [
+        "192.168.151.62"
+      ],
+      "state": "DOWN",
+      "type": "LAPTOP",
+      "make": "Dell",
+      "model": "Vostro 3400",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "5C:FB:3A:BB:FD:09",
+      "ip": [
+        "192.168.151.67"
+      ],
+      "state": "DOWN",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    },
+    {
+      "mac": "00:E0:4C:36:00:73",
+      "ip": [
+        "192.168.151.110"
+      ],
+      "state": "DOWN",
+      "type": "COMPUTER",
+      "first_seen": "2025-11-05T05:59:26.427Z",
+      "last_changed": "2025-11-05T06:39:33.476Z"
+    }
+    ]
+  }
+  </script>
+
+  <script>
+    let devices = [];
+    let sortDirection = 1;
+    let currentSortKey = null;
+
+    function loadData() {
+      const raw = document.getElementById("ipdata").textContent.trim();
+      try {
+        const parsed = JSON.parse(raw);
+        devices = Array.isArray(parsed) ? parsed : parsed.devices || [];
+        renderTable();
+      } catch (e) {
+        alert("Invalid JSON format inside <script id='ipdata'> block.");
+      }
+    }
+
+    // 🔄 Full page reload on click
+    document.getElementById("reloadBtn").addEventListener("click", () => {
+      location.reload();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", renderTable);
+    document.getElementById("filterState").addEventListener("change", renderTable);
+
+    // Sorting
+    document.querySelectorAll("th[data-sort]").forEach(th => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.sort;
+        if (currentSortKey === key) sortDirection *= -1;
+        else sortDirection = 1;
+        currentSortKey = key;
+        renderTable();
+      });
+    });
+
+    function renderTable() {
+      const tbody = document.querySelector("#deviceTable tbody");
+      tbody.innerHTML = "";
+
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      const stateFilter = document.getElementById("filterState").value;
+
+      let filtered = devices.filter(d =>
+        (!stateFilter || d.state === stateFilter) &&
+        (d.name?.toLowerCase().includes(search) ||
+         d.mac?.toLowerCase().includes(search) ||
+         d.ip?.join(", ").includes(search))
+      );
+
+      if (currentSortKey) {
+        filtered.sort((a, b) => {
+          let valA = a[currentSortKey];
+          let valB = b[currentSortKey];
+          if (Array.isArray(valA)) valA = valA.join(", ");
+          if (Array.isArray(valB)) valB = valB.join(", ");
+          return valA > valB ? sortDirection : valA < valB ? -sortDirection : 0;
+        });
+      }
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500">No results found</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(d => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-gray-50";
+        const ipHTML = d.ip?.map(ip => 
+          `<span class="text-blue-600 cursor-pointer hover:underline copy-ip" data-ip="${ip}">${ip}</span>`
+        ).join(", ") || "-";
+
+        row.innerHTML = `
+          <td class="px-4 py-2">${d.name || "-"}</td>
+          <td class="px-4 py-2">${ipHTML}</td>
+          <td class="px-4 py-2">${d.mac || "-"}</td>
+          <td class="px-4 py-2">${d.type || "-"}</td>
+          <td class="px-4 py-2">${d.make || "-"}</td>
+          <td class="px-4 py-2"><span class="status-${d.state}">${d.state}</span></td>
+          <td class="px-4 py-2">${d.first_seen ? new Date(d.first_seen).toLocaleString() : "-"}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      // Enable copy-to-clipboard for IPs
+      document.querySelectorAll(".copy-ip").forEach(el => {
+        el.addEventListener("click", () => copyToClipboard(el.dataset.ip));
+      });
+    }
+
+    function copyToClipboard(ip) {
+      navigator.clipboard.writeText(ip).then(() => showToast(`Copied ${ip}`));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.style.opacity = 1;
+      setTimeout(() => toast.style.opacity = 0, 2000);
+    }
+
+    // Auto load when page opens
+    loadData();
+  </script>
+</body>
+</html>
